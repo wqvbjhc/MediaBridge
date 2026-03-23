@@ -10,11 +10,12 @@ export interface VideoInfo {
     duration?: number;
     author?: string;
     extractor: string;
+    sourceUrl?: string;
+    requestHeaders?: Record<string, string>;
 }
 
 export async function getYtdlpInfo(url: string): Promise<VideoInfo> {
     return new Promise((resolve, reject) => {
-        // 检查是否存在 cookies 文件
         const cookiesPath = path.join(process.cwd(), "cookies", "cookies.txt");
         const hasCookies = fs.existsSync(cookiesPath);
 
@@ -49,24 +50,23 @@ export async function getYtdlpInfo(url: string): Promise<VideoInfo> {
                 reject(new Error(`yt-dlp exited with code ${code}\n${stderrData}`));
                 return;
             }
+
             try {
                 const parsed = JSON.parse(stdoutData);
 
-                // yt-dlp returns the direct media url in 'url' (or in formats array).
-                // 'webpage_url' is just the HTML page. We need the actual video stream URL.
-
-                // If the root has a 'url', it's usually the best pre-merged format or direct link.
-                // Otherwise, try to find a format that has both video and audio, or fallback to the first url.
                 let mediaUrl = parsed.url;
                 if (!mediaUrl && parsed.formats && parsed.formats.length > 0) {
-                    // Try to find the best format with both video and audio
-                    const bestFormat = parsed.formats.reverse().find((f: any) => f.vcodec !== 'none' && f.acodec !== 'none' && f.url);
+                    const formats = [...parsed.formats];
+                    const bestMuxedFormat = formats.reverse().find(
+                        (format: any) => format.vcodec !== "none" && format.acodec !== "none" && format.url,
+                    );
 
-                    // If none has both, fallback to best video-only or just the first format
-                    mediaUrl = bestFormat?.url || parsed.formats[parsed.formats.length - 1]?.url;
+                    mediaUrl = bestMuxedFormat?.url || parsed.formats[parsed.formats.length - 1]?.url;
                 }
 
-                if (!mediaUrl) mediaUrl = parsed.webpage_url || url;
+                if (!mediaUrl) {
+                    mediaUrl = parsed.webpage_url || url;
+                }
 
                 resolve({
                     id: parsed.id,
@@ -76,8 +76,10 @@ export async function getYtdlpInfo(url: string): Promise<VideoInfo> {
                     duration: parsed.duration,
                     author: parsed.uploader || parsed.author || parsed.creator,
                     extractor: parsed.extractor_key,
+                    sourceUrl: parsed.webpage_url || parsed.original_url || url,
+                    requestHeaders: parsed.http_headers,
                 });
-            } catch (e) {
+            } catch {
                 reject(new Error("Failed to parse yt-dlp output"));
             }
         });

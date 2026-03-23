@@ -56,7 +56,9 @@ export function DownloaderForm() {
                     url: videoInfo.url, // 使用解析出的直链
                     title: videoInfo.title,
                     duration: videoInfo.duration,
-                    author: videoInfo.author
+                    author: videoInfo.author,
+                    requestHeaders: videoInfo.requestHeaders,
+                    sourceUrl: videoInfo.sourceUrl
                 }),
             });
 
