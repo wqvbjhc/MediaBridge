@@ -172,4 +172,5 @@ export async function POST(req: NextRequest) {
     }
 }
 
-export const maxDuration = 600;
+// Vercel Hobby 上限 300 秒；Pro 才能到 800/900。如升级 Pro 可调高。
+export const maxDuration = 300;
