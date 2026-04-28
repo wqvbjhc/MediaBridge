@@ -21,7 +21,7 @@ FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
+ENV PORT=7860
 ENV HOSTNAME=0.0.0.0
 
 # yt-dlp + ffmpeg + curl（curl 替代代码里的 curl.exe，跨平台分支已加）
@@ -44,5 +44,9 @@ COPY --from=builder /app/public ./public
 COPY scripts/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-EXPOSE 3000
+# HF Spaces 默认以 uid 1000 跑容器；保证 /app 可写
+RUN useradd -m -u 1000 user && chown -R user:user /app
+USER user
+
+EXPOSE 7860
 CMD ["/app/start.sh"]

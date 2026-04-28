@@ -1,3 +1,15 @@
+---
+title: MediaBridge
+emoji: 🎬
+colorFrom: yellow
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+short_description: 多平台视频下载与浏览器内在线剪辑
+---
+
 # Video Downloader & Editor
 
 基于 Next.js 的多平台视频下载与浏览器内在线剪辑工具，支持无水印解析，采用 Neo-brutalist 风格界面。
