@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
                 url,
             ];
 
-            const curlProcess = spawn("curl.exe", curlArgs);
+            const curlBin = process.platform === "win32" ? "curl.exe" : "curl";
+            const curlProcess = spawn(curlBin, curlArgs);
 
             const proxyStream = new ReadableStream({
                 start(controller) {

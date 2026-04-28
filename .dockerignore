@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.github
+.vercel
+cookies
+*.log
+.env*.local
+Dockerfile
+.dockerignore
+README.md
+LICENSE
