@@ -140,7 +140,7 @@ export function DownloaderForm() {
                 <input
                     type="url"
                     required
-                    placeholder="粘贴视频链接（抖音、B站、YouTube…）"
+                    placeholder="粘贴视频链接（抖音、今日头条、B站、YouTube…）"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     className="flex-1 px-4 py-4 text-lg bg-white border-4 border-black text-black focus:outline-none focus:ring-0 placeholder:text-gray-400 font-bold tracking-tight shadow-[4px_4px_0px_0px_#000]"

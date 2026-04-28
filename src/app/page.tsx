@@ -25,8 +25,8 @@ export default function Home() {
           <p className="text-center text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
             支持的平台
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {["YouTube", "抖音", "Bilibili", "TikTok", "小红书"].map((name) => (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            {["YouTube", "抖音", "今日头条", "Bilibili", "TikTok", "小红书"].map((name) => (
               <div
                 key={name}
                 className="text-center font-black text-sm uppercase tracking-wider py-3 px-2 border-2 border-gray-300 text-gray-500 hover:border-black hover:text-black hover:shadow-[3px_3px_0px_0px_#000] transition-all cursor-default"

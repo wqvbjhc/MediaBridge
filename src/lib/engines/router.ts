@@ -1,5 +1,5 @@
 import { VideoInfo, getYtdlpInfo } from "./yt-dlp";
-import { parseDouyin, parseXiaohongshu } from "./custom";
+import { parseDouyin, parseXiaohongshu, parseToutiao } from "./custom";
 
 // 超时包装器：限制每个解析器的最大执行时间
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -17,6 +17,7 @@ export async function parseVideoUrl(url: string): Promise<VideoInfo> {
     const isDouyin = url.includes("douyin.com") || url.includes("iesdouyin.com");
     const isXiaohongshu = url.includes("xiaohongshu.com") || url.includes("xhslink.com");
     const isTiktok = url.includes("tiktok.com");
+    const isToutiao = url.includes("toutiao.com") || url.includes("ixigua.com") || url.includes("365yg.com");
 
     // Fallback 策略执行器（串行尝试，每个都有超时保护）
     const runWithFallback = async (parsers: { label: string; fn: () => Promise<VideoInfo>; timeoutMs: number }[]) => {
@@ -37,6 +38,13 @@ export async function parseVideoUrl(url: string): Promise<VideoInfo> {
     if (isDouyin) {
         return runWithFallback([
             { label: "抖音智能解析", fn: () => parseDouyin(url), timeoutMs: 40000 },
+        ]);
+    }
+
+    if (isToutiao) {
+        return runWithFallback([
+            { label: "头条智能解析", fn: () => parseToutiao(url), timeoutMs: 20000 },
+            { label: "yt-dlp", fn: () => getYtdlpInfo(url), timeoutMs: 30000 },
         ]);
     }
 
