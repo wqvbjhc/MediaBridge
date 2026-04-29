@@ -34,10 +34,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Next.js standalone 产物
+# Next.js standalone 产物（public/ 为空时省略）
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
 COPY scripts/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
