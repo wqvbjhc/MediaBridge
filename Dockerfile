@@ -17,12 +17,13 @@ RUN pnpm run build
 # ---- runner stage ----
 FROM node:20-bookworm-slim AS runner
 
-# 系统依赖：yt-dlp + ffmpeg + curl（curl 替代 curl.exe 的跨平台分支）
+# 系统依赖：yt-dlp + ffmpeg + curl
+# - python3 不装：yt-dlp 标准二进制是 PyInstaller 单文件包，自带 Python，无需外部依赖
+# - curl 用于下载 yt-dlp 二进制 + 替代代码里 curl.exe 的跨平台分支
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         ffmpeg \
-        python3 \
         curl \
     && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp \
@@ -30,7 +31,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # HF Spaces 强制以 uid 1000 跑容器；按 HF 文档建议在 COPY 之前建用户、改 WORKDIR
-RUN useradd -m -u 1000 user
+# node:20 基础镜像自带 node 用户已占 uid 1000，先删除再建 user
+RUN userdel -r node 2>/dev/null || true && useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH \
