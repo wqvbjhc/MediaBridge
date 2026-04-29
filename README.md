@@ -16,8 +16,8 @@ short_description: 多平台视频下载与浏览器内在线剪辑
 
 ## 功能特性
 
-- **多平台下载**：YouTube、Bilibili、抖音、TikTok、小红书
-- **无水印解析**：抖音、小红书通过云端网关或 SSR 获取原片直链
+- **多平台下载**：YouTube、Bilibili、抖音、今日头条、TikTok、小红书
+- **无水印解析**：抖音、小红书通过云端网关或 SSR 获取原片直链；今日头条走字节 VOD GetPlayInfo
 - **在线剪辑**：浏览器内时间轴裁剪，基于 ffmpeg.wasm，无需上传至服务器
 - **智能分流**：直链由服务端转发，YouTube 等需合并音视频的由 yt-dlp 处理
 
@@ -25,8 +25,9 @@ short_description: 多平台视频下载与浏览器内在线剪辑
 
 | 项目 | 要求 |
 |------|------|
-| Node.js | 18+ |
-| yt-dlp | 需安装在系统 PATH 中 |
+| Node.js | 20+ |
+| 包管理器 | pnpm |
+| yt-dlp | 需安装在系统 PATH 中（生产部署用 Docker 时已自带） |
 | 浏览器（剪辑功能） | Chrome / Edge，需支持 SharedArrayBuffer |
 
 ## 安装 yt-dlp
@@ -77,20 +78,25 @@ sudo chmod a+rx /usr/local/bin/yt-dlp
    pnpm dev
    ```
 
-4. 浏览器访问 `http://localhost:3000`
+4. 浏览器访问 `http://localhost:3000`（开发模式 Next.js 默认端口）
 
 ### 生产构建
 
 ```bash
-npm run build
-npm run start
+pnpm run build
+pnpm run start
 ```
+
+### 生产部署（Hugging Face Spaces / Docker）
+
+详见 [`docs/deploy-hf-spaces.md`](./docs/deploy-hf-spaces.md)。生产容器监听 `7860` 端口，
+Cookies 通过 `COOKIES_TXT_B64` 环境变量在容器启动时落盘。
 
 ## 使用说明
 
 ### 视频下载
 
-1. 在首页输入框粘贴视频链接（支持 YouTube、Bilibili、抖音、TikTok、小红书等）
+1. 在首页输入框粘贴视频链接（支持 YouTube、Bilibili、抖音、今日头条、TikTok、小红书等）
 2. 点击「解析」
 3. 解析成功后显示封面、标题、时长
 4. 点击「下载 MP4」保存到本地
@@ -116,10 +122,11 @@ npm run start
 
 | 类别 | 技术 |
 |------|------|
-| 框架 | Next.js 16 (App Router) |
-| 样式 | TailwindCSS v4, shadcn/ui |
-| 下载引擎 | yt-dlp, 自定义抖音/小红书解析 |
+| 框架 | Next.js 16.1 (App Router, standalone output) |
+| 样式 | TailwindCSS v4 |
+| 下载引擎 | yt-dlp + 自定义抖音/今日头条/小红书解析 |
 | 剪辑引擎 | ffmpeg.wasm (浏览器端) |
+| 部署 | Docker（Hugging Face Spaces / 自托管） |
 
 ## 项目结构
 

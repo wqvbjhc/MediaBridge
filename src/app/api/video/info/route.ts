@@ -25,7 +25,7 @@ export async function POST(req: Request) {
                 success: false,
                 error: error.message || "解析失败，请检查链接是否正确",
             },
-            { status: 200 } // 返回 200 让前端能正常读取 JSON
+            { status: 500 } // 解析层失败，按 5xx 返回，前端用 res.ok 判断
         );
     }
 }

@@ -15,7 +15,20 @@ export default function EditorPage() {
     const messageRef = useRef<HTMLParagraphElement>(null);
 
     useEffect(() => {
-        ffmpegRef.current = new FFmpeg();
+        const ffmpeg = new FFmpeg();
+        ffmpegRef.current = ffmpeg;
+
+        // listener 提到外层闭包，便于 cleanup 时 off
+        const onLog = ({ message }: { message: string }) => {
+            setMessage(message);
+        };
+        ffmpeg.on("log", onLog);
+
+        return () => {
+            ffmpeg.off("log", onLog);
+            // FFmpeg 实例本身没暴露 destroy，但解绑 listener 已能避免内存泄漏；
+            // 切页/重挂载时下一个实例会替换 ref。
+        };
     }, []);
 
     const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -32,9 +45,7 @@ export default function EditorPage() {
         const ffmpeg = ffmpegRef.current;
         if (!ffmpeg) return;
 
-        ffmpeg.on("log", ({ message }) => {
-            setMessage(message);
-        });
+        // log listener 已在 useEffect 中注册，这里不再重复 on，避免内存泄漏
 
         // To solve COEP issues on some setups, it's safer to load via BLOB URL
         try {

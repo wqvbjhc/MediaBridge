@@ -28,10 +28,12 @@ export function DownloaderForm() {
                 body: JSON.stringify({ url }),
             });
 
-            const data = await res.json();
+            // 4xx/5xx 也会带 JSON body，先尝试解析；失败就用 statusText 兜底
+            let data: any = null;
+            try { data = await res.json(); } catch { /* ignore */ }
 
-            if (!data.success) {
-                throw new Error(data.error || "解析器返回错误");
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.error || `解析失败 (HTTP ${res.status} ${res.statusText})`);
             }
 
             setVideoInfo(data.data);
