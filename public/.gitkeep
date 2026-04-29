@@ -1,0 +1,2 @@
+# Next.js 静态资源目录
+# 此目录当前为空，但 Dockerfile 会 COPY 它，需要 git 跟踪

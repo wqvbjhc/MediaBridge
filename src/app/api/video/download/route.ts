@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import fs from "fs";
+import { isAllowedRemoteUrl } from "@/lib/url-guard";
+
+const CURL_TIMEOUT_MS = 5 * 60 * 1000;        // 直链下载最多 5 分钟
+const YTDLP_TIMEOUT_MS = 10 * 60 * 1000;      // yt-dlp 最多 10 分钟（YouTube 1080p 合并耗时）
+
+function attachKillTimer(child: ChildProcess, ms: number, label: string) {
+    const timer = setTimeout(() => {
+        console.warn(`[${label}] timeout ${ms}ms, killing pid=${child.pid}`);
+        try { child.kill("SIGTERM"); } catch { /* ignore */ }
+        // 5 秒后还没退就 SIGKILL
+        setTimeout(() => {
+            try { child.kill("SIGKILL"); } catch { /* ignore */ }
+        }, 5000);
+    }, ms);
+    child.once("close", () => clearTimeout(timer));
+    child.once("error", () => clearTimeout(timer));
+}
 
 function isDirectMediaUrl(url: string) {
     return (
@@ -67,6 +84,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "请提供视频链接" }, { status: 400 });
         }
 
+        // SSRF 防御：用户传入的 url 必须能解析、必须公网域名、必须 http(s)
+        const guard = isAllowedRemoteUrl(url);
+        if (!guard.ok) {
+            console.warn("[Download] URL rejected by guard:", guard.reason, url);
+            return NextResponse.json({ error: `URL rejected: ${guard.reason}` }, { status: 400 });
+        }
+
         const authorPart = author ? `[${author}]` : "";
         const titlePart = title || "video";
         let timePart = "";
@@ -93,6 +117,7 @@ export async function POST(req: NextRequest) {
 
             const curlBin = process.platform === "win32" ? "curl.exe" : "curl";
             const curlProcess = spawn(curlBin, curlArgs);
+            attachKillTimer(curlProcess, CURL_TIMEOUT_MS, "curl");
 
             const proxyStream = new ReadableStream({
                 start(controller) {
@@ -140,6 +165,7 @@ export async function POST(req: NextRequest) {
         if (hasCookies) args.push("--cookies", cookiesPath);
 
         const child = spawn("yt-dlp", args);
+        attachKillTimer(child, YTDLP_TIMEOUT_MS, "yt-dlp");
 
         const stream = new ReadableStream({
             start(controller) {
@@ -173,5 +199,5 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// Vercel Hobby 上限 300 秒；Pro 才能到 800/900。如升级 Pro 可调高。
+// Vercel Hobby 上限 300 秒；Pro 才能到 800/900。HF Spaces 不读这个声明，留着无害。
 export const maxDuration = 300;

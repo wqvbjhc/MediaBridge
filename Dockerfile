@@ -16,13 +16,8 @@ RUN pnpm run build
 
 # ---- runner stage ----
 FROM node:20-bookworm-slim AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=7860
-ENV HOSTNAME=0.0.0.0
 
-# yt-dlp + ffmpeg + curl（curl 替代代码里的 curl.exe，跨平台分支已加）
+# 系统依赖：yt-dlp + ffmpeg + curl（curl 替代 curl.exe 的跨平台分支）
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -34,16 +29,24 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Next.js standalone 产物（public/ 为空时省略）
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-COPY scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# HF Spaces 默认以 uid 1000 跑容器；保证 /app 可写
-RUN useradd -m -u 1000 user && chown -R user:user /app
+# HF Spaces 强制以 uid 1000 跑容器；按 HF 文档建议在 COPY 之前建用户、改 WORKDIR
+RUN useradd -m -u 1000 user
 USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH \
+    NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=7860 \
+    HOSTNAME=0.0.0.0
+WORKDIR $HOME/app
+
+# Next.js standalone 产物（用 --chown 避免 HF 文档警告的"recursive chown 镜像翻倍"）
+COPY --from=builder --chown=user /app/.next/standalone ./
+COPY --from=builder --chown=user /app/.next/static ./.next/static
+COPY --from=builder --chown=user /app/public ./public
+
+COPY --chown=user scripts/start.sh ./start.sh
+RUN chmod +x ./start.sh
 
 EXPOSE 7860
-CMD ["/app/start.sh"]
+CMD ["./start.sh"]

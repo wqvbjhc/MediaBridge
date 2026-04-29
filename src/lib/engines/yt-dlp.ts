@@ -34,6 +34,18 @@ export async function getYtdlpInfo(url: string): Promise<VideoInfo> {
 
         const childProcess = spawn("yt-dlp", args);
 
+        // 60s 兜底 kill；router.ts 外层还有 withTimeout(30s) 包装，会先 reject Promise，
+        // 但子进程会孤儿化吃 CPU，必须显式 kill。
+        const killTimer = setTimeout(() => {
+            console.warn(`[yt-dlp info] timeout, killing pid=${childProcess.pid}`);
+            try { childProcess.kill("SIGTERM"); } catch { /* ignore */ }
+            setTimeout(() => {
+                try { childProcess.kill("SIGKILL"); } catch { /* ignore */ }
+            }, 5000);
+        }, 60_000);
+        childProcess.once("close", () => clearTimeout(killTimer));
+        childProcess.once("error", () => clearTimeout(killTimer));
+
         let stdoutData = "";
         let stderrData = "";
 
